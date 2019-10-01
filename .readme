@@ -4,3 +4,5 @@ sasadds
 sacsasadd
 sdhujjkssa
 sadhhkhkjkhj
+
+curl -H "Content-Type: application/json" -H "PRIVATE-TOKEN: JtPy-MVzit3gmsqDyMxK" -X POST --data '{"name": "test-project-xyz1","path": "project-xyz1", "namespace_id":5585323,"issues_enabled": "true","merge_requests_enabled": "true","wiki_enabled": "true","snippets_enabled": "true","shared_runners_enabled": "false","visibility_level": 20,"request_access_enabled": "true","lfs_enabled": "false","approvals_before_merge" : 1}' https://gitlab.com/api/v4/projects
