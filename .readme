@@ -6,3 +6,10 @@ sdhujjkssa
 sadhhkhkjkhj
 
 curl -H "Content-Type: application/json" -H "PRIVATE-TOKEN: JtPy-MVzit3gmsqDyMxK" -X POST --data '{"name": "test-project-xyz1","path": "project-xyz1", "namespace_id":5585323,"issues_enabled": "true","merge_requests_enabled": "true","wiki_enabled": "true","snippets_enabled": "true","shared_runners_enabled": "false","visibility_level": 20,"request_access_enabled": "true","lfs_enabled": "false","approvals_before_merge" : 1}' https://gitlab.com/api/v4/projects
+
+
+curl -H "Content-Type: application/json" -H "PRIVATE-TOKEN: ZqWBTzzseFqvAxMyF_WV" -X POST --data '{"name":"Java-app","path": "Java-app","namespace_id":8,"issues_enabled": "true","merge_requests_enabled": "true","wiki_enabled": "true","snippets_enabled": "true","shared_runners_enabled": "false","visibility_level": 20,"request_access_enabled": "true","lfs_enabled": "false","approvals_before_merge" : 1, "import_url": "https://chharud:MzUxMDAwNTM3MjU0OruBK2tNzEhrJNh7PqIMDzyMWh2m@stash.dts.fm.rbsgrp.net/scm/cmg/ttr.git","mirror": "true"}' http://28.151.182.135/api/v4/projects
+
+curl -H "Content-Type: application/json" -u chharud:MTY0MTUwMzYxMjkxOsQl6MvlRevG13/+SnwT79fme2A3  --insecure -X POST --data '{"name": "Webhook Name", "events": ["repo:refs_changed","pr:merged"],"url": "http://example.com","active": true}' https://stash.dts.fm.rbsgrp.net/rest/api/latest/projects/CMG/repos/tntr-business-response-service/webhooks
+
+curl -H "Content-Type: application/json" -u chharud:MTY0MTUwMzYxMjkxOsQl6MvlRevG13/+SnwT79fme2A3  --insecure -X POST --data '{"matcher":{"id":"refs/heads/feature/PipelineTest","displayId":"feature/PipelineTest","type":{"id":"BRANCH"}},"type":"pull-request-only"}' https://stash.dts.fm.rbsgrp.net/rest/branch-permissions/latest/projects/CMG/repos/tntr-business-response-service/restrictions?avatarSize=32
