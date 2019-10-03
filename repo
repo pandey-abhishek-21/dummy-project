@@ -1,0 +1,96 @@
+#!/bin/bash
+#set -e
+
+CURRENT_DIR=`pwd`
+cd $(dirname $0)
+
+# Source jenkins config
+. ../../../config/common-config.sh > /dev/null 2>&1
+
+#Download the jenkins-cli jar
+if [ ! -f jenkins-cli.jar ]; then
+    wget $JENKINS_HOST/jnlpJars/jenkins-cli.jar
+fi
+
+while read -r project_name
+do  
+   read -r group_name
+   parent_id=null
+   IFS='/' read -ra groups <<< "$group_name"
+   for group in "${groups[@]}"; do
+    group_id=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" $GITLAB_HOST/groups?search=$group | jq '.[0].id')
+
+    if [[ "$group_id" == "null" && "$parent_id" == "null" ]]; then
+        parent_id=$(curl -X POST $GITLAB_HOST/groups -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' -H 'private-token: '$GITLAB_TOKEN'' --data-urlencode "name=$group" --data-urlencode "visibility=private" --data-urlencode "lfs_enabled=false" --data-urlencode "path=$group" | jq '.id');
+        group_id=$parent_id
+    elif [[ "$group_id" == *"null"* ]]
+    then
+        parent_id=$(curl -X POST $GITLAB_HOST/groups -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' -H 'private-token: '$GITLAB_TOKEN'' --data-urlencode "name=$group" --data-urlencode "visibility=private" --data-urlencode "lfs_enabled=false" --data-urlencode "parent_id=$parent_id" --data-urlencode "path=$group"  | jq '.id');
+        group_id=$parent_id
+    else 
+        parent_id=$group_id
+    fi
+    done
+
+    read -r jenkins_job_name
+    read -r users
+    read -r encoded_name
+    read -r is_cd_enabled
+
+    # creating projects
+     project_url=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" $GITLAB_HOST/projects/$encoded_name | jq -r '.http_url_to_repo')
+     project_id=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" $GITLAB_HOST/projects/$encoded_name  | jq '.id')
+
+     if [[ "$project_url" == *"null"* ]]; then
+        project_id=$(curl -H "Content-Type: application/json" -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -X POST --data '{"name": "'$project_name'","path": "'$project_name'", "namespace_id":'$group_id',"issues_enabled": "true","merge_requests_enabled": "true","wiki_enabled": "true","snippets_enabled": "true","shared_runners_enabled": "false","visibility_level": 20,"request_access_enabled": "true","lfs_enabled": "false","approvals_before_merge" : 1}' $GITLAB_HOST/projects | jq '.id')
+        project_url=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" $GITLAB_HOST/projects/$project_id | jq -r '.http_url_to_repo')
+
+    #     # creating a branch
+    #     curl  -X POST \
+    #     $GITLAB_HOST/projects/$project_id/repository/branches \
+    #     -H 'cache-control: no-cache' \
+    #     -H 'content-type: application/x-www-form-urlencoded' \
+    #     -H 'private-token: '$GITLAB_TOKEN'' \
+    #     --data-urlencode "branch=$branch_name" \
+    #     --data-urlencode "ref=master"
+
+    #    # creating protected branch
+    #    curl  -X POST \
+    #    $GITLAB_HOST/projects/$project_id/protected_branches \
+    #    -H 'cache-control: no-cache' \
+    #    -H 'content-type: application/x-www-form-urlencoded' \
+    #    -H 'private-token: '$GITLAB_TOKEN'' \
+    #    --data-urlencode "name=$branch_name" \
+    #    --data-urlencode "push_access_level=0" \
+    #    --data-urlencode "merge_access_level=0" \
+    #    --data-urlencode "merge_access_level=0"
+    fi
+
+    jenkins_job_ci=$project_name
+    jenkins_job_qa=$project_name'_qa'
+    jenkins_job_prod=$project_name'_prod'
+    #url and token variable for creating web-hook
+    url=$JENKINS_HOST'/project/'$jenkins_job_ci'/master'
+
+    # creating web-hook
+    curl -X POST \
+    $GITLAB_HOST/projects/$project_id/hooks \
+    -H 'cache-control: no-cache' \
+    -H 'content-type: application/x-www-form-urlencoded' \
+    -H 'private-token: '$GITLAB_TOKEN'' \
+    --data-urlencode "url=$url" \
+    --data-urlencode "token=$GITLAB_TOKEN"
+    
+    sed 's#\(<remote>\)*\(</remote>\)#\1'$project_url'\2#g' jenkins_ci_template.xml > /tmp/jenkins_job_ci.xml
+    java -jar jenkins-cli.jar -s $JENKINS_HOST  -auth $JENKINS_USER:$JENKINS_PASS create-job  $jenkins_job_ci < /tmp/jenkins_job_ci.xml
+
+    if [[ "$is_cd_enabled" == *"true"* ]]; then
+     sed 's#\(<url>\)*\(</url>\)#\1'$project_url'\2#g' jenkins_qa_template.xml > /tmp/jenkins_job_qa.xml
+     java -jar jenkins-cli.jar -s $JENKINS_HOST -auth $JENKINS_USER:$JENKINS_PASS create-job  $jenkins_job_qa < /tmp/jenkins_job_qa.xml
+     sed 's#\(<url>\)*\(</url>\)#\1'$project_url'\2#g' jenkins_prod_template.xml > /tmp/jenkins_job_prod.xml
+     java -jar jenkins-cli.jar -s $JENKINS_HOST -auth $JENKINS_USER:$JENKINS_PASS create-job  $jenkins_job_prod < /tmp/jenkins_job_prod.xml
+    fi
+
+done < <(jq -r '.[] | .project_name, .group_name, .jenkins_job_name, (.users | @tsv), .encoded_name, .is_cd_enabled' gitlab_project_details.json)
+
+cd $CURRENT_DIR
