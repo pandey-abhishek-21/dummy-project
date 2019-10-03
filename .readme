@@ -13,3 +13,8 @@ curl -H "Content-Type: application/json" -H "PRIVATE-TOKEN: ZqWBTzzseFqvAxMyF_WV
 curl -H "Content-Type: application/json" -u chharud:MTY0MTUwMzYxMjkxOsQl6MvlRevG13/+SnwT79fme2A3  --insecure -X POST --data '{"name": "Webhook Name", "events": ["repo:refs_changed","pr:merged"],"url": "http://example.com","active": true}' https://stash.dts.fm.rbsgrp.net/rest/api/latest/projects/CMG/repos/tntr-business-response-service/webhooks
 
 curl -H "Content-Type: application/json" -u chharud:MTY0MTUwMzYxMjkxOsQl6MvlRevG13/+SnwT79fme2A3  --insecure -X POST --data '{"matcher":{"id":"refs/heads/feature/PipelineTest","displayId":"feature/PipelineTest","type":{"id":"BRANCH"}},"type":"pull-request-only"}' https://stash.dts.fm.rbsgrp.net/rest/branch-permissions/latest/projects/CMG/repos/tntr-business-response-service/restrictions?avatarSize=32
+
+
+wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+chmod +x ./jq
+cp jq /usr/bin
