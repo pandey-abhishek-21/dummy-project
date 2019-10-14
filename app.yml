@@ -1,0 +1,24 @@
+APP:
+    APP_ID: 3xww
+    project:
+    VERSION: ${APP_ID}_
+    name: "${PROJECT_NAME}-${PROJECT_ID}"
+
+    database:
+        host: $DATABASE_HOST
+        port: 3301
+        username: username
+        password: $DATABASE_PASSWORD
+        database: test
+
+        table:
+          user: table_user
+          blog: table_blog
+
+    redis:
+        host: $REDIS_HOST
+        port: 5041
+
+        config:
+          expire: '300'
+          prefix: "pandey"
